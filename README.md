@@ -7,14 +7,21 @@ Scripts em PowerShell para automatizar aplicação de Patches e execução de UP
 
 # Patches/ApplyPatches.ps1
 
-Script que compila no ambiente todos os Patches de determinado diretório
+Script que compila no ambiente todos os Patches de determinado diretório utilizando [AppServer Command Line - Compilação por linha de comando
+](https://tdn.totvs.com/pages/viewpage.action?pageId=528461210)
+
+### Configuração:
+
+- Descompactar todas as atualizações em um diretório
+- Ajustar os diretórios no início do arquivo ApplyPatches.ps1
+- Executar o Script no PoweShell a partir do diretório Patches
+
 
 ![Aplicação de Patches](Patches/ApplyPatches.gif)
 
 # UPDDISTR/UPDDISTR.ps1
 
-Ferramenta para Execução automática do UPDDISTR
-Utilizando https://tdn.totvs.com/display/public/PROT/UPDDISTR+executado+via+Job
+Ferramenta para Execução automática do [UPDDISTR via Job](https://tdn.totvs.com/display/public/PROT/UPDDISTR+executado+via+Job)
 
 ### Configuração:
 - Configurar um Appserver específico para a rotina, adcicionando no ini as linhas:
@@ -26,7 +33,10 @@ Utilizando https://tdn.totvs.com/display/public/PROT/UPDDISTR+executado+via+Job
     Jobs=UPDJOB
     RefreshRate=900
 
-- Configurar os diretórios nas variáveis abaixo
+- Descompactar todas as atualizações em um diretório
+- Ajustar os diretórios no início do arquivo UPDDISTR.ps1
+- Renomear o arquivo upddistr_param.json.EXAMPLE para upddistr_param.json
+- Executar o Script no PoweShell a partir do diretório UPDDISTR
 
 ### A ordem de execução é a seguinte:
 
@@ -48,6 +58,7 @@ Utilizando https://tdn.totvs.com/display/public/PROT/UPDDISTR+executado+via+Job
 - [ ] Help e Dicionários em diretórios separados
 
 ## Melhorias
+- [ ] Compilar todos os fontes do repositório
 - [ ] Guardar logs na aplicação de patches
 - [ ] Permitir parar o processo de UPDDISTR quando não executar
 - [ ] Verificarse o OnStart está configurado no Ini do Protheus
