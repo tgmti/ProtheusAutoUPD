@@ -1,0 +1,16 @@
+{
+    "password":"senha",
+    "simulacao":false,
+    "localizacao":"BRA",
+    "sixexclusive":true,
+    "empresas":["99","01","03"],
+    "logprocess":false,
+    "logatualizacao":true,
+    "logwarning":false,
+    "loginclusao":false,
+    "logcritical":true,
+    "updstop":false,
+    "oktoall":true,
+    "deletebkp":false,
+    "keeplog":false
+}
