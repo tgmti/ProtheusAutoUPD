@@ -2,8 +2,27 @@
 
 Scripts em PowerShell para automatizar aplicação de Patches e execução de UPDDISTR no Protheus
 
+- [Compilador de Fontes](#CompilePrograms/CompilePrograms.ps1)
 - [Aplicador de Patches](#Patches/ApplyPatches.ps1)
 - [Execução de UPDDISTR](#UPDDISTR/UPDDISTR.ps1)
+
+
+# CompilePrograms/CompilePrograms.ps1
+
+Script que compila no ambiente todos os programas PRW, PRX e PRG de determinado diretório utilizando [AppServer Command Line - Compilação por linha de comando
+](https://tdn.totvs.com/pages/viewpage.action?pageId=528461210)
+
+Depois de compilar, é executada uma desfragmentação do RPO, e apagados os arquivos de pré-compilação gerados.
+
+### Configuração:
+
+- Ajustar os diretórios no início do arquivo CompilePrograms.ps1
+- Executar o Script no PoweShell a partir do diretório CompilePrograms
+- Analisar o resultado da compilação no terminal e nos arquivos `compile_errors.log` e `compile_success.log`
+
+
+![Compilação de Programas](CompilePrograms/CompilePrograms.gif)
+
 
 # Patches/ApplyPatches.ps1
 
