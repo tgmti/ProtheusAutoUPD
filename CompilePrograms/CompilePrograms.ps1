@@ -19,8 +19,7 @@ Get-ChildItem  -Path $PRGPATH -File -Recurse -Force -Include *.PRW,*.PRG,*.PRX `
 -and $_.FullName -notlike "*\.Includes\*" `
 -and $_.FullName -notlike "*\.vscode\*" `
 } `
-| Select-Object @{Expression={$_.FullName + ";"};width = } `
-| Format-Table -HideTableHeaders `
+| Format-Table -HideTableHeaders -Property @{e={$_.FullName + ";"}; width = 255} -AutoSize `
 | Out-File -Path $COMPILELIST -NoNewline -Encoding "Windows-1252" -Width 255
 
 If (Get-Item $COMPILELIST) {
