@@ -1,7 +1,6 @@
 $PRGPATH='C:\Users\thiago.mota\Documents\Projetos\SandriProtheus'
-$LOGUPD='.\logapply.log'
-$COMPILELIST='.\compile.lst'
-$OUTRESULT='.\'
+$COMPILELIST='C:\Temp\compile.lst'
+$OUTRESULT='C:\Temp\'
 $PROTHEUS='C:\TOTVS\Dev120127\Protheus\bin\appserver'
 $APPSERVER_EXE=$PROTHEUS + '\appserver.exe'
 $ENVCOMPILE='comp_custom'
@@ -15,30 +14,29 @@ Write-Host $SEPARATOR
 Write-Host  Obtendo Lista dos programas a compilar
 Write-Host $SEPARATOR
 
-Set-Location $PROTHEUS
-
 Get-ChildItem  -Path $PRGPATH -File -Recurse -Force -Include *.PRW,*.PRG,*.PRX `
 | Where { $_.FullName -notlike "*\.git\*" `
 -and $_.FullName -notlike "*\.Includes\*" `
 -and $_.FullName -notlike "*\.vscode\*" `
 } `
-| Select-Object @{Expression={$_.FullName + ";"}} `
+| Select-Object @{Expression={$_.FullName + ";"};width = } `
 | Format-Table -HideTableHeaders `
-| Out-File -Path $COMPILELIST -NoNewline
+| Out-File -Path $COMPILELIST -NoNewline -Encoding "Windows-1252" -Width 255
 
 If (Get-Item $COMPILELIST) {
     Write-Host $SEPARATOR
     Write-Host  Compilando Programas listados
     Write-Host $SEPARATOR
 
-    $AppplyCommand = ("& " + $APPSERVER_EXE + " -compile " `
-    + " -files="+$COMPILELIST `
-    + "-includes="+ $INCLUDES `
-    + "-src="+ $PRGPATH `
-    + "-env="+ $ENVCOMPILE `
-    + "-outreport="+ $OUTRESULT `
+    $AppplyCommand = ('& ' + $APPSERVER_EXE + ' -compile ' `
+    + ' -files="'+$COMPILELIST +'"' `
+    + ' -includes="'+ $INCLUDES +'"' `
+    + ' -src="'+ $PROTHEUS +'"' `
+    + ' -env='+ $ENVCOMPILE `
+    + ' -outreport="'+ $OUTRESULT +'"' `
     )
 
+    Write-Host $AppplyCommand
     Invoke-Expression $AppplyCommand
 
 }
@@ -49,6 +47,15 @@ Write-Host $SEPARATOR
 
 $AppplyCommand = ("& " + $APPSERVER_EXE + " -compile -defragrpo -env="+ $ENVCOMPILE )
 Invoke-Expression $AppplyCommand
+
+
+Write-Host $SEPARATOR
+Write-Host Limpando arquivos de compilação
+Write-Host $SEPARATOR
+
+Get-ChildItem  -Path $PRGPATH -File -Recurse -Force `
+-Include *.ppo,*.errprw,*.errprx,*.errprg,*.erx_PRW,*.erx_PRX,*.erx_PRG,*.ppx_PRW,*.ppx_PRX,*.ppx_PRG `
+| Remove-Item -Force
 
 Write-Host $SEPARATOR
 Write-Host Compilação de fontes finalizada!
