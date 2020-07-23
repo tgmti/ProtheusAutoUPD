@@ -1,8 +1,8 @@
-$UPDBASE='E:\Totvs12\Update23\Patch\'
-$UPDPATH=$UPDBASE + 'Auto\'
-$UPDSUCCESS=$UPDBASE + 'Success\'
-$UPDERROR=$UPDBASE + 'Error\'
-$LOGUPD='E:\Totvs12\Update23\ApplyPatches.log'
+$UPDBASE='E:\totvs\Updates\Protheus27\Patch_auto\'
+$UPDPATH=$UPDBASE + 'Auto'
+$UPDSUCCESS=$UPDBASE + 'Successo\'
+$UPDERROR=$UPDBASE + 'Erro\'
+$LOGUPD=$UPDBASE + 'ApplyPatches.log'
 $APPSERVER_EXE='E:\Totvs12\Microsiga\Protheus\bin\AppServerUpd\appserver.exe'
 $ENVIRONMENT='UPD'
 
@@ -29,6 +29,10 @@ function MoveUpd {
 $aPatches = Get-ChildItem -Path $UPDPATH -Recurse -Force *tttp*.ptm
 
 $SEPARATOR="".PadRight(80,"=")
+
+Write-Host $SEPARATOR
+Write-Host Iniciando aplicacao de $aPatches.Count Patches
+Write-Host $SEPARATOR
 
 foreach ($cPatch in $aPatches) {
 
