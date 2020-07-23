@@ -1,11 +1,12 @@
 
 # Configurações
-$UPDPATH='C:\TOTVS\Updates\Auto\'
-$UPDSUCCESS='C:\TOTVS\Updates\Success\'
-$UPDERROR='C:\TOTVS\Updates\Error\'
+$UPDBASE='E:\TOTVS\UPDATES\PROTHEUS27\DIC_AUTO\'
+$UPDPATH= $UPDBASE + 'Auto\'
+$UPDSUCCESS= $UPDBASE + 'Success\'
+$UPDERROR= $UPDBASE + 'Error\'
 
-$PROTHEUS='C:\TOTVS\Dev\'
-$APPSERVER_EXE=$PROTHEUS + 'Protheus\bin\appserverUPDDISTR\appserver.exe'
+$PROTHEUS='E:\Totvs12\Microsiga\'
+$APPSERVER_EXE=$PROTHEUS + 'Protheus\bin\AppServerUpd\appserver.exe'
 $SYSTEM=$PROTHEUS + 'Protheus_Data\system\'
 $SYSTEMLOAD=$PROTHEUS + 'Protheus_Data\systemload\'
 
@@ -14,6 +15,8 @@ $PARAMS_FILE_ORIGIN=('.\upddistr_param.json')
 $PARAMS_FILE=($SYSTEMLOAD + 'upddistr_param.json')
 
 $SEPARATOR="".PadRight(80,"=")
+
+$Simulado=$False
 
 # Organiza execução dos updates
 function UpdateProtheus {
@@ -27,6 +30,11 @@ function UpdateProtheus {
     Write-Host 'Listando atualizações existentes em ' $UPDPATH
 
     $aUpdates = ListUpdates($UPDPATH)
+
+    # Se só tem um, encapsula no array
+    If ( $aUpdates.GetType().Name -ne 'Object[]' ) {
+        $aUpdates = @( $aUpdates )
+    }
 
     foreach ($aFiles in $aUpdates) {
 
@@ -63,7 +71,10 @@ function UpdateProtheus {
 # Listar arquivos de update diferencial
 function ListUpdates($cDistPath) {
 
-    $aUpdates = Get-ChildItem -Path $cDistPath -Recurse -Force *df*.txt | Where-Object -FilterScript { ($_.Name -eq 'sdfbra.txt') -or ($_.Name -eq 'hlpdfpor.txt') } | Group-Object -Property DirectoryName
+    $aUpdates = Get-ChildItem -Path $cDistPath -Recurse -Force *df*.txt |
+        Where-Object -FilterScript {
+            ($_.Name -eq 'sdfbra.txt') -or ($_.Name -eq 'hlpdfpor.txt') -or ($_.Name -eq 'hlpdfspa.txt') -or ($_.Name -eq 'hlpdfeng.txt')
+        } | Group-Object -Property DirectoryName
 
     return $aUpdates
 }
@@ -108,7 +119,13 @@ function CopyFiles($aCopyFiles) {
 # Executa o Appserver
 function ExecuteUpd() {
     Write-Host 'Executando UPDDISTR No Protheus'
-    Start-Process -FilePath ($APPSERVER_EXE) -ArgumentList '-console'
+
+    If ($Simulado) {
+        Sleep 2
+        '{ "result": "success" }' > $RESULT_FILE
+    } Else {
+        Start-Process -FilePath ($APPSERVER_EXE) -ArgumentList '-console'
+    }
 }
 
 # Monitora o resultado
@@ -137,7 +154,11 @@ function StopProtheus() {
 
     $oProc = Get-Process | Where-Object -FilterScript { $_.ProcessName -like 'appserver' -and $_.Path -like $APPSERVER_EXE  }
 
-    Stop-Process $oProc
+    If ($Simulado) {
+        Write-Host KILL PROC
+    } Else {
+        Stop-Process $oProc -ErrorAction -SilentlyContinue
+    }
 }
 
 
@@ -165,11 +186,15 @@ function MoveUpd {
         $lSuccess
     )
     $cDestination = If ($lSuccess) { $UPDSUCCESS } Else { $UPDERROR }
-    $cPathOrigin = $UPDPATH + $oUpdate.Name.Replace($UPDPATH,'').Split('\')[0]
+    $cPathOrigin = $oUpdate.Name.ToUpper().Replace($UPDPATH.ToUpper(),'').Split('\')[0]
+    $cPathToMove = $UPDPATH + $cPathOrigin
+    $cPathResult = $cDestination + $cPathOrigin
 
     Write-Host 'Movendo arquivos para ' $cDestination
 
-    Move-Item -Path $cPathOrigin -Destination $cDestination -Force -ErrorAction SilentlyContinue
+    Move-Item -Path $cPathToMove -Destination $cDestination -Force -ErrorAction SilentlyContinue
+
+    Copy-Item -Path $RESULT_FILE -Destination $cPathResult -Force -ErrorAction SilentlyContinue
 
 }
 
