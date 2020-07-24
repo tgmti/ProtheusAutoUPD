@@ -43,11 +43,11 @@ function UpdateProtheus {
 
         PrepareUpd
         CopyFiles($aFiles)
-        ExecuteUpd
+        $oProcProtheus = ExecuteUpd
 
         WaitResult
 
-        StopProtheus
+        StopProtheus $oProcProtheus
 
         MoveUpd $aFiles (GetResult)
 
@@ -124,7 +124,7 @@ function ExecuteUpd() {
         Sleep 2
         '{ "result": "success" }' > $RESULT_FILE
     } Else {
-        Start-Process -FilePath ($APPSERVER_EXE) -ArgumentList '-console'
+        return (Start-Process -FilePath ($APPSERVER_EXE) -ArgumentList '-console' -PassThru)
     }
 }
 
@@ -148,17 +148,9 @@ function WaitResult() {
 }
 
 # Derruba o serviço Protheus
-function StopProtheus() {
-
+function StopProtheus($oProc) {
     Write-Host 'Finalizando serviço Protheus'
-
-    $oProc = Get-Process | Where-Object -FilterScript { $_.ProcessName -like 'appserver' -and $_.Path -like $APPSERVER_EXE  }
-
-    If ($Simulado) {
-        Write-Host KILL PROC
-    } Else {
-        Stop-Process $oProc -ErrorAction -SilentlyContinue
-    }
+    Stop-Process $oProc -ErrorAction SilentlyContinue
 }
 
 
@@ -188,13 +180,18 @@ function MoveUpd {
     $cDestination = If ($lSuccess) { $UPDSUCCESS } Else { $UPDERROR }
     $cPathOrigin = $oUpdate.Name.ToUpper().Replace($UPDPATH.ToUpper(),'').Split('\')[0]
     $cPathToMove = $UPDPATH + $cPathOrigin
-    $cPathResult = $cDestination + $cPathOrigin
+    $cPathResult = $cDestination + $cPathOrigin + "\result.json"
 
     Write-Host 'Movendo arquivos para ' $cDestination
 
-    Move-Item -Path $cPathToMove -Destination $cDestination -Force -ErrorAction SilentlyContinue
+    Write-Host Origem: $cPathToMove
+    Write-Host ResultFile: $cPathResult
 
-    Copy-Item -Path $RESULT_FILE -Destination $cPathResult -Force -ErrorAction SilentlyContinue
+    Move-Item -Path $cPathToMove -Destination $cDestination -Force
+    # -ErrorAction SilentlyContinue
+
+    Copy-Item -Path $RESULT_FILE -Destination $cPathResult -Force
+    # -ErrorAction SilentlyContinue
 
 }
 
