@@ -51,26 +51,25 @@ function UpdateProtheus {
 
         PrepareUpd
 
-        CopyFiles($aFiles)
+        if ( CopyFiles($aFiles) ) {
+            if ($Invoke) {
 
+                ExecuteUpdInvoke($aFiles)
 
-        if ($Invoke) {
+            } Else {
+                $oProcProtheus = ExecuteUpd
 
-            ExecuteUpdInvoke($aFiles)
+                WaitResult
 
-        } Else {
-            $oProcProtheus = ExecuteUpd
+                StopProtheus $oProcProtheus
+            }
 
-            WaitResult
-
-            StopProtheus $oProcProtheus
-        }
-
-        #MoveUpd $aFiles (GetResult)
-        if (GetResult) {
-            $WithSuccess.Add($aFiles)
-        } Else {
-            $WithErrors.Add($aFiles)
+            #MoveUpd $aFiles (GetResult)
+            if (GetResult) {
+                $WithSuccess.Add($aFiles)
+            } Else {
+                $WithErrors.Add($aFiles)
+            }
         }
 
         CleanUpd
@@ -82,13 +81,13 @@ function UpdateProtheus {
     Write-Host $SEPARATOR
     Write-Host 'Execução dos compatibilizadores UPDDISTR finalizada'
 
-    if ($WithSuccess.Length > 0) {
+    if ($WithSuccess.Length -gt 0) {
         Write-Host $SEPARATOR
         Write-Host Com sucesso:
         $WithSuccess | Select Name | Format-Table -AutoSize -Wrap
     }
 
-    if ($WithErrors.Length > 0) {
+    if ($WithErrors.Length -gt 0) {
         Write-Host $SEPARATOR
         Write-Host Com Erros:
         $WithErrors | Select Name | Format-Table -AutoSize -Wrap
@@ -108,7 +107,7 @@ function ListUpdates($cDistPath) {
 
     $aUpdates = Get-ChildItem -Path $cDistPath -Recurse -Force *df*.txt |
         Where-Object -FilterScript {
-            (($_.Name -eq 'sdfbra.txt') -or ($_.Name -eq 'hlpdfpor.txt')) -and
+            (($_.Name -eq 'sdfbra.txt') -or ($_.Name -eq 'hlpdfpor.txt') -or ($_.Name -eq 'hlpdfeng.txt') -or ($_.Name -eq 'hlpdfspa.txt')) -and
             ( $_.DirectoryName -notlike '*\sdf\chi*' ) -and
             ( $_.DirectoryName -notlike '*\sdf\arg*' ) -and
             ( $_.DirectoryName -notlike '*\sdf\col*' ) -and
@@ -150,10 +149,22 @@ function CleanUpd() {
 # Copiar os arquivos para o diretório SystemLoad
 function CopyFiles($aCopyFiles) {
 
+    $Success = $False
+
     foreach ($oFile in $aCopyFiles.Group) {
         Write-Host Copiando arquivo $oFile.BaseName de $oFile.DirectoryName.Replace($UPDPATH,'')
         Copy-Item $oFile -Destination $SYSTEMLOAD
+
+        If ( Test-Path(($SYSTEMLOAD + $oFile.Name)) ) {
+            $Success = $True
+        } Else {
+            Write-Host Erro ao Copiar o arquivo $oFile.BaseName
+            Return $False
+        }
+
     }
+
+    return $Success
 
 }
 
@@ -163,8 +174,8 @@ function ExecuteUpd() {
     Write-Host 'Executando UPDDISTR No Protheus'
 
     If ($Simulado) {
-        Sleep 2
-        '{ "result": "success" }' > $RESULT_FILE
+        #Sleep 2
+        '{ "result": "SIMULADO" }' > $RESULT_FILE
     } Else {
         return (Start-Process -FilePath ($APPSERVER_EXE) -ArgumentList '-console' -PassThru)
     }
@@ -192,8 +203,8 @@ function ExecuteUpdInvoke() {
     Start-Transcript -Path $LogInvoke -UseMinimalHeader
 
     If ($Simulado) {
-        Sleep 2
-        '{ "result": "success" }' > $RESULT_FILE
+        #Sleep 2
+        '{ "result": "SIMULADO" }' > $RESULT_FILE
     } Else {
         $UpdCommand = ("& " + $APPSERVER_EXE + " -run=UPDDISTR -env=" + $ENVIRONMENT)
         Invoke-Expression $UpdCommand
