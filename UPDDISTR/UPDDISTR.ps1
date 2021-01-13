@@ -1,12 +1,13 @@
 
 # Configurações
-$UPDBASE='E:\TOTVS\UPDATES\PROTHEUS27\DIC_AUTO\'
-$UPDPATH= $UPDBASE + 'Auto\'
+$UPDBASE='F:\TOTVSUPDATE\12.01.23_20210112\AutoUpd\Patches\'
+$UPDPATH= $UPDBASE
 $UPDSUCCESS= $UPDBASE + 'Success\'
 $UPDERROR= $UPDBASE + 'Error\'
 
-$PROTHEUS='E:\Totvs12\Microsiga\'
-$APPSERVER_EXE=$PROTHEUS + 'Protheus\bin\AppServerUpd\appserver.exe'
+$PROTHEUS='F:\TOTVSDEV\Microsiga\'
+$APPSERVER_EXE=$PROTHEUS + 'Protheus\bin\appserverAutoUpdDistr\appserver.exe'
+$ENVIRONMENT='dev'
 $SYSTEM=$PROTHEUS + 'Protheus_Data\system\'
 $SYSTEMLOAD=$PROTHEUS + 'Protheus_Data\systemload\'
 
@@ -17,6 +18,11 @@ $PARAMS_FILE=($SYSTEMLOAD + 'upddistr_param.json')
 $SEPARATOR="".PadRight(80,"=")
 
 $Simulado=$False
+$Invoke=$True
+
+$LOGUPD=$UPDBASE + '..\UpdDistr.log'
+$WithSuccess= [System.Collections.ArrayList]::new()
+$WithErrors= [System.Collections.ArrayList]::new()
 
 # Organiza execução dos updates
 function UpdateProtheus {
@@ -43,23 +49,49 @@ function UpdateProtheus {
 
         PrepareUpd
         CopyFiles($aFiles)
-        $oProcProtheus = ExecuteUpd
 
-        WaitResult
+        if ($Invoke) {
+            $Time = [System.Diagnostics.Stopwatch]::StartNew()
 
-        StopProtheus $oProcProtheus
+            ExecuteUpdInvoke
 
-        MoveUpd $aFiles (GetResult)
+            if ( Test-Path ($RESULT_FILE) ) {
+                Write-Host UPDDISTR Executado em ("{0:HH:mm:ss}" -f ([datetime]$Time.Elapsed.Ticks))
+            }
+
+        } Else {
+            $oProcProtheus = ExecuteUpd
+
+            WaitResult
+
+            StopProtheus $oProcProtheus
+        }
+
+        #MoveUpd $aFiles (GetResult)
+        if (GetResult) {
+            $WithSuccess.Add($aFiles)
+        } Else {
+            $WithErrors.Add($aFiles)
+        }
 
         CleanUpd
 
         Write-Host Finalizada atualização ($aUpdates.IndexOf($aFiles)+1) de $aUpdates.Length
         Write-Host $SEPARATOR
-
     }
 
     Write-Host $SEPARATOR
     Write-Host 'Execução dos compatibilizadores UPDDISTR finalizada'
+
+    Write-Host $SEPARATOR
+    Write-Host Com sucesso:
+    $WithSuccess | Select Name | Format-Table -AutoSize -Wrap
+
+    Write-Host $SEPARATOR
+    Write-Host Com Erros:
+    $WithErrors | Select Name | Format-Table -AutoSize -Wrap
+
+    Write-Host $SEPARATOR
     Write-Host $aUpdates.Length atualizações executadas em ("{0:HH:mm:ss}" -f ([datetime]$TotalTime.Elapsed.Ticks))
     Write-Host $SEPARATOR
 
@@ -126,6 +158,22 @@ function ExecuteUpd() {
     } Else {
         return (Start-Process -FilePath ($APPSERVER_EXE) -ArgumentList '-console' -PassThru)
     }
+}
+# Executa o Appserver via Invoke
+function ExecuteUpdInvoke() {
+    Write-Host 'Executando UPDDISTR No Protheus'
+    Write-Host $SEPARATOR
+
+    If ($Simulado) {
+        Sleep 2
+        '{ "result": "success" }' > $RESULT_FILE
+    } Else {
+        $UpdCommand = ("& " + $APPSERVER_EXE + " -run=UPDDISTR -env=" + $ENVIRONMENT)
+        Invoke-Expression $UpdCommand
+    }
+
+    Write-Host $SEPARATOR
+
 }
 
 # Monitora o resultado
@@ -195,5 +243,11 @@ function MoveUpd {
 
 }
 
+
+
+Start-Transcript -Path $LOGUPD # Inicia Gravação do Log
+
 UpdateProtheus
 #PrepareUpd
+
+Stop-Transcript # Finaliza Gravação do Log
