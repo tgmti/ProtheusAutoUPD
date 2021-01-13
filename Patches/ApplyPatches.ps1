@@ -2,7 +2,7 @@ $UPDBASE='F:\TOTVSUPDATE\12.01.23_20210112\AutoUpd\Patches\'
 $UPDPATH=$UPDBASE
 $UPDSUCCESS=$UPDBASE + 'Success\'
 $UPDERROR=$UPDBASE + 'Error\'
-$LOGUPD=$UPDBASE + 'ApplyPatches_tst.log'
+$LOGUPD=$UPDBASE + '..\ApplyPatches.log'
 $APPSERVER_EXE='F:\TOTVSDEV\Microsiga\Protheus\bin\appserverThiago\appserver.exe'
 $ENVIRONMENT='dev'
 
@@ -30,7 +30,7 @@ function MoveUpd {
     Write-Host 'Mover: ' $cPathOrigin
     Write-Host 'Movendo arquivos para ' $cDestination
 
-    # Move-Item -Path $cPathOrigin -Destination $cDestination -Force -ErrorAction SilentlyContinue
+    Move-Item -Path $cPathOrigin -Destination $cDestination -Force -ErrorAction SilentlyContinue
 
 }
 
@@ -52,7 +52,7 @@ foreach ($cPatch in $aPatches) {
     $AppplyCommand = ("& " + $APPSERVER_EXE + " -compile -applypatch -env=" + $ENVIRONMENT + " -files=" + $cPatch)
     Write-Host $AppplyCommand
     # &($APPSERVER_EXE + " -compile -applypatch -env=" + $ENVIRONMENT + " -files="+$cPatch)
-    # $logApply = Invoke-Expression $AppplyCommand
+    $logApply = Invoke-Expression $AppplyCommand
 
     $lSuccess = ( $logApply -contains '[CMDLINE] Patch successfully applied.' )
 
@@ -77,7 +77,7 @@ Write-Host Desfragmentando o RPO
 Write-Host $SEPARATOR
 
 $AppplyCommand = ("& " + $APPSERVER_EXE + " -compile -defragrpo -env=" + $ENVIRONMENT)
-# Invoke-Expression $AppplyCommand
+Invoke-Expression $AppplyCommand
 
 Write-Host $SEPARATOR
 Write-Host Aplicacao de Patches finalizada!
