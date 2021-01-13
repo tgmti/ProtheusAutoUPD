@@ -1,12 +1,14 @@
 
 # Configurações
-$UPDBASE='F:\TOTVSUPDATE\12.01.23_20210112\AutoUpd\Patches\'
+$UPDBASE='F:\TOTVSUPDATE\12.01.23_20210112\AutoUpd\Apply\'
 $UPDPATH= $UPDBASE
 $UPDSUCCESS= $UPDBASE + 'Success\'
 $UPDERROR= $UPDBASE + 'Error\'
+$UPDLOGS= $UPDBASE + '..\Logs\'
 
 $PROTHEUS='F:\TOTVSDEV\Microsiga\'
-$APPSERVER_EXE=$PROTHEUS + 'Protheus\bin\appserverAutoUpdDistr\appserver.exe'
+$APPSERVER_DIR=$PROTHEUS + 'Protheus\bin\appserverAutoUpdDistr\'
+$APPSERVER_EXE=$APPSERVER_DIR + 'appserver.exe'
 $ENVIRONMENT='dev'
 $SYSTEM=$PROTHEUS + 'Protheus_Data\system\'
 $SYSTEMLOAD=$PROTHEUS + 'Protheus_Data\systemload\'
@@ -48,16 +50,13 @@ function UpdateProtheus {
         Write-Host Iniciando atualização ($aUpdates.IndexOf($aFiles)+1) de $aUpdates.Length
 
         PrepareUpd
+
         CopyFiles($aFiles)
 
+
         if ($Invoke) {
-            $Time = [System.Diagnostics.Stopwatch]::StartNew()
 
-            ExecuteUpdInvoke
-
-            if ( Test-Path ($RESULT_FILE) ) {
-                Write-Host UPDDISTR Executado em ("{0:HH:mm:ss}" -f ([datetime]$Time.Elapsed.Ticks))
-            }
+            ExecuteUpdInvoke($aFiles)
 
         } Else {
             $oProcProtheus = ExecuteUpd
@@ -83,13 +82,17 @@ function UpdateProtheus {
     Write-Host $SEPARATOR
     Write-Host 'Execução dos compatibilizadores UPDDISTR finalizada'
 
-    Write-Host $SEPARATOR
-    Write-Host Com sucesso:
-    $WithSuccess | Select Name | Format-Table -AutoSize -Wrap
+    if ($WithSuccess.Length > 0) {
+        Write-Host $SEPARATOR
+        Write-Host Com sucesso:
+        $WithSuccess | Select Name | Format-Table -AutoSize -Wrap
+    }
 
-    Write-Host $SEPARATOR
-    Write-Host Com Erros:
-    $WithErrors | Select Name | Format-Table -AutoSize -Wrap
+    if ($WithErrors.Length > 0) {
+        Write-Host $SEPARATOR
+        Write-Host Com Erros:
+        $WithErrors | Select Name | Format-Table -AutoSize -Wrap
+    }
 
     Write-Host $SEPARATOR
     Write-Host $aUpdates.Length atualizações executadas em ("{0:HH:mm:ss}" -f ([datetime]$TotalTime.Elapsed.Ticks))
@@ -105,7 +108,12 @@ function ListUpdates($cDistPath) {
 
     $aUpdates = Get-ChildItem -Path $cDistPath -Recurse -Force *df*.txt |
         Where-Object -FilterScript {
-            ($_.Name -eq 'sdfbra.txt') -or ($_.Name -eq 'hlpdfpor.txt') -or ($_.Name -eq 'hlpdfspa.txt') -or ($_.Name -eq 'hlpdfeng.txt')
+            (($_.Name -eq 'sdfbra.txt') -or ($_.Name -eq 'hlpdfpor.txt')) -and
+            ( $_.DirectoryName -notlike '*\sdf\chi*' ) -and
+            ( $_.DirectoryName -notlike '*\sdf\arg*' ) -and
+            ( $_.DirectoryName -notlike '*\sdf\col*' ) -and
+            ( $_.DirectoryName -notlike '*\sdf\mex*' ) -and
+            ( $_.DirectoryName -notlike '*\sdf\per*' )
         } | Group-Object -Property DirectoryName
 
     return $aUpdates
@@ -129,11 +137,13 @@ function PrepareUpd() {
 # Limpa os arquivos de atualização
 function CleanUpd() {
 
-    Remove-Item -Path ($SYSTEM + 'TOTVSP*.*') -ErrorAction SilentlyContinue
+    Remove-Item -Path ($APPSERVER_DIR + 'mpupd*.*') -Force -ErrorAction SilentlyContinue
 
-    Remove-Item -Path ($SYSTEMLOAD + '*df*.txt') -ErrorAction SilentlyContinue
-    Remove-Item -Path ($RESULT_FILE) -ErrorAction SilentlyContinue
-    Remove-Item -Path ($PARAMS_FILE) -ErrorAction SilentlyContinue
+    Remove-Item -Path ($SYSTEM + 'TOTVSP*.*') -Force -ErrorAction SilentlyContinue
+
+    Remove-Item -Path ($SYSTEMLOAD + '*df*.txt') -Force -ErrorAction SilentlyContinue
+    Remove-Item -Path ($RESULT_FILE) -Force -ErrorAction SilentlyContinue
+    Remove-Item -Path ($PARAMS_FILE) -Force -ErrorAction SilentlyContinue
 }
 
 
@@ -161,8 +171,25 @@ function ExecuteUpd() {
 }
 # Executa o Appserver via Invoke
 function ExecuteUpdInvoke() {
+
+    param (
+        $oUpdate
+    )
+
     Write-Host 'Executando UPDDISTR No Protheus'
-    Write-Host $SEPARATOR
+
+    $Time = [System.Diagnostics.Stopwatch]::StartNew()
+    Write-Progress -Activity "Aguardando execução do UPDDISTR" -Status ("{0:HH:mm:ss}" -f ([datetime]$Time.Elapsed.Ticks))
+
+    $LogName = $oUpdate.Name.ToUpper().Replace($UPDPATH.ToUpper(),'').Split('\')[0]
+
+    $LogInvoke = $UPDLOGS + $LogName + ".log"
+    $LogResult = $UPDLOGS + $LogName + "_Result.json"
+
+    Stop-Transcript # Finaliza Gravação do Log Principal
+
+    # Grava o log do Appserver separado
+    Start-Transcript -Path $LogInvoke -UseMinimalHeader
 
     If ($Simulado) {
         Sleep 2
@@ -172,7 +199,14 @@ function ExecuteUpdInvoke() {
         Invoke-Expression $UpdCommand
     }
 
-    Write-Host $SEPARATOR
+    Stop-Transcript # Finaliza Gravação do Log do Appserver
+
+    Start-Transcript -Path $LOGUPD -Append -UseMinimalHeader # Volta a gravar no log principal
+
+    if ( Test-Path ($RESULT_FILE) ) {
+        Write-Host UPDDISTR Executado em ("{0:HH:mm:ss}" -f ([datetime]$Time.Elapsed.Ticks))
+        Copy-Item -Path $RESULT_FILE -Destination $LogResult -Force -ErrorAction SilentlyContinue
+    }
 
 }
 
@@ -245,7 +279,7 @@ function MoveUpd {
 
 
 
-Start-Transcript -Path $LOGUPD # Inicia Gravação do Log
+Start-Transcript -Path $LOGUPD -UseMinimalHeader # Inicia Gravação do Log
 
 UpdateProtheus
 #PrepareUpd
