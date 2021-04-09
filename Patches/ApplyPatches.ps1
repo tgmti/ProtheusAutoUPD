@@ -1,15 +1,16 @@
-$UPDBASE='F:\TOTVSUPDATE\12.01.23_20210112\AutoUpd\Patches\'
-$UPDPATH=$UPDBASE
-$UPDSUCCESS=$UPDBASE + 'Success\'
-$UPDERROR=$UPDBASE + 'Error\'
-$LOGUPD=$UPDBASE + '..\ApplyPatches.log'
-$APPSERVER_EXE='F:\TOTVSDEV\Microsiga\Protheus\bin\appserverThiago\appserver.exe'
-$ENVIRONMENT='dev'
+$oConfig = Get-Content 'config.json' | ConvertFrom-Json
+
+$updatePath = $oConfig.update_path
+$successPath = $oConfig.success_path
+$errorPath = $oConfig.error_path
+$logFile = $oConfig.log_file
+$appserverExe = $oConfig.appserver_exe
+$environment = $oConfig.environment
 
 $WithSuccess= [System.Collections.ArrayList]::new()
 $WithErrors= [System.Collections.ArrayList]::new()
 
-Start-Transcript -Path $LOGUPD # Inicia Gravação do Log
+Start-Transcript -Path $logFile # Inicia Gravação do Log
 
 # Move os arquivos de UPD para o diretório Sucesso ou erro
 function MoveUpd {
@@ -18,10 +19,10 @@ function MoveUpd {
         $oUpdate,
         $lSuccess
     )
-    $cDestination = If ($lSuccess) { $UPDSUCCESS } Else { $UPDERROR }
+    $cDestination = If ($lSuccess) { $successPath } Else { $errorPath }
     $cPathOrigin = $oUpdate.Directory
 
-    If ($cPathOrigin -eq $UPDPATH){
+    If ($cPathOrigin -eq $updatePath){
         Write-Host 'Mover so arquivo' $oUpdate
     } Else {
         Write-Host 'Mover Diretorio'
@@ -35,7 +36,7 @@ function MoveUpd {
 }
 
 
-$aPatches = Get-ChildItem -Path $UPDPATH -Recurse -Force *tttp*.ptm
+$aPatches = Get-ChildItem -Path $updatePath -Recurse -Force *tttp*.ptm
 
 $SEPARATOR="".PadRight(80,"=")
 
@@ -46,12 +47,12 @@ Write-Host $SEPARATOR
 foreach ($cPatch in $aPatches) {
 
     Write-Host $SEPARATOR
-    Write-Host Aplicando pacote $cPatch.DirectoryName.Replace($UPDPATH, '')
+    Write-Host Aplicando pacote $cPatch.DirectoryName.Replace($updatePath, '')
     Write-Host $SEPARATOR
 
-    $AppplyCommand = ("& " + $APPSERVER_EXE + " -compile -applypatch -env=" + $ENVIRONMENT + " -files=" + $cPatch)
+    $AppplyCommand = ("& " + $appserverExe + " -compile -applypatch -env=" + $environment + " -files=" + $cPatch)
     Write-Host $AppplyCommand
-    # &($APPSERVER_EXE + " -compile -applypatch -env=" + $ENVIRONMENT + " -files="+$cPatch)
+    # &($appserverExe + " -compile -applypatch -env=" + $environment + " -files="+$cPatch)
     $logApply = Invoke-Expression $AppplyCommand
 
     $lSuccess = ( $logApply -contains '[CMDLINE] Patch successfully applied.' )
@@ -76,16 +77,16 @@ Write-Host $SEPARATOR
 Write-Host Desfragmentando o RPO
 Write-Host $SEPARATOR
 
-$AppplyCommand = ("& " + $APPSERVER_EXE + " -compile -defragrpo -env=" + $ENVIRONMENT)
+$AppplyCommand = ("& " + $appserverExe + " -compile -defragrpo -env=" + $environment)
 Invoke-Expression $AppplyCommand
 
 Write-Host $SEPARATOR
 Write-Host Aplicacao de Patches finalizada!
 Write-Host Com sucesso:
-$WithSuccess | Select Name, Directory | Format-Table -AutoSize -Wrap
+$WithSuccess | Select-Object Name, Directory | Format-Table -AutoSize -Wrap
 Write-Host $SEPARATOR
 Write-Host Com Erros:
-$WithErrors | Select Name, Directory | Format-Table -AutoSize -Wrap
+$WithErrors | Select-Object Name, Directory | Format-Table -AutoSize -Wrap
 Write-Host $SEPARATOR
 
 Stop-Transcript # Finaliza Gravação do Log

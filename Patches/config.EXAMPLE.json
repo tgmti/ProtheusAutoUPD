@@ -1,0 +1,8 @@
+{
+    "update_path": "C:\\TOTVS\\ATUALIZACOES\\PATCHES\\APLICAR\\",
+    "success_path": "C:\\TOTVS\\ATUALIZACOES\\PATCHES\\SUCESSO\\",
+    "error_path": "C:\\TOTVS\\ATUALIZACOES\\PATCHES\\ERRO\\",
+    "log_file": "C:\\TOTVS\\ATUALIZACOES\\PATCHES\\APLICACAO_PATCHES.LOG",
+    "appserver_exe": "C:\\TOTVS\\APPSERVER\\appserver.exe",
+    "environment": "environment"
+}
