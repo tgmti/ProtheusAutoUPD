@@ -1,10 +1,12 @@
-$PRGPATH='C:\Users\thiago.mota\Documents\Projetos\SandriProtheus\faturamento\ponto entrada'
-$COMPILELIST='C:\Temp\compile.lst'
-$OUTRESULT='C:\Temp\'
-$PROTHEUS='C:\TOTVS\Dev120127\Protheus\bin\appserver'
-$APPSERVER_EXE=$PROTHEUS + '\appserver.exe'
-$ENVCOMPILE='comp_custom'
-$INCLUDES='C:\Users\thiago.mota\Documents\Projetos\SandriProtheus\.Includes'
+$oConfig = Get-Content 'config.json' | ConvertFrom-Json
+
+$appserverPath=$oConfig.appserver_path
+$compileListFile=$oConfig.compile_list_file
+$outputPath=$oConfig.output_path
+$projectPath=$oConfig.proth
+$appserverExe=$projectPath + '\' + $oconfig.appserver_exe
+$environment=$oConfig.environment
+$includesPath=$oConfig.includes_path
 
 $SEPARATOR="".PadRight(80,"=")
 $PRG_COMPILAR=$null
@@ -32,28 +34,28 @@ function LimparArquivosAntigos {
     MostraStatus "Limpando arquivos de Compilação existentes!"
 
     # Limpar os arquivos de compilação, erros e sucesso
-    Remove-Item $COMPILELIST -ErrorAction SilentlyContinue
-    Remove-Item ($OUTRESULT + "compile_errors.log" ) -ErrorAction SilentlyContinue
-    Remove-Item ($OUTRESULT + "compile_success.log" ) -ErrorAction SilentlyContinue
+    Remove-Item $compileListFile -ErrorAction SilentlyContinue
+    Remove-Item ($outputPath + "compile_errors.log" ) -ErrorAction SilentlyContinue
+    Remove-Item ($outputPath + "compile_success.log" ) -ErrorAction SilentlyContinue
 }
 
 function ListarArquivos {
 
     MostraStatus "Obtendo Lista dos programas a compilar..."
 
-    Get-ChildItem  -Path $PRGPATH -File -Recurse -Force -Include *.PRW,*.PRG,*.PRX `
-    | Where { $_.FullName -notlike "*\.git\*" `
+    Get-ChildItem  -Path $appserverPath -File -Recurse -Force -Include *.PRW,*.PRG,*.PRX `
+    | Where-Object { $_.FullName -notlike "*\.git\*" `
     -and $_.FullName -notlike "*\.Includes\*" `
     -and $_.FullName -notlike "*\.vscode\*" `
     } `
     | Format-Table -HideTableHeaders -Property @{e={$_.FullName + ";"}; width = 255} -AutoSize -OutVariable PRG_COMPILAR
 
     if ($PRG_COMPILAR.Count -gt 0) {
-        MostraStatus "Encontrados $($PRG_COMPILAR.Count -4) programas para compilar. Gerando arquivo $COMPILELIST ..."
+        MostraStatus "Encontrados $($PRG_COMPILAR.Count -4) programas para compilar. Gerando arquivo $compileListFile ..."
 
-        $PRG_COMPILAR | Out-File -Path $COMPILELIST -NoNewline -Encoding "Windows-1252" -Width 255
+        $PRG_COMPILAR | Out-File -Path $compileListFile -NoNewline -Encoding "Windows-1252" -Width 255
 
-        If (Get-Item $COMPILELIST) { return $True } else { return $False}
+        If (Get-Item $compileListFile) { return $True } else { return $False}
 
     } else {
         MostraStatus "ERRO: Nenhum programa encontrado para compilar"
@@ -66,12 +68,12 @@ function compilarProgramas {
 
     MostraStatus "Compilando Programas listados..."
 
-    $AppplyCommand = ('& ' + $APPSERVER_EXE + ' -compile ' `
-    + ' -files="'+$COMPILELIST +'"' `
-    + ' -includes="'+ $INCLUDES +'"' `
-    + ' -src="'+ $PROTHEUS +'"' `
-    + ' -env='+ $ENVCOMPILE `
-    + ' -outreport="'+ $OUTRESULT +'"' `
+    $AppplyCommand = ('& ' + $appserverExe + ' -compile ' `
+    + ' -files="'+$compileListFile +'"' `
+    + ' -includes="'+ $includesPath +'"' `
+    + ' -src="'+ $projectPath +'"' `
+    + ' -env='+ $environment `
+    + ' -outreport="'+ $outputPath +'"' `
     )
 
     Write-Host Comando:
@@ -89,7 +91,7 @@ function desfragmentarRPO {
 
     MostraStatus "Desfragmentando o RPO..."
 
-    $AppplyCommand = ("& " + $APPSERVER_EXE + " -compile -defragrpo -env="+ $ENVCOMPILE )
+    $AppplyCommand = ("& " + $appserverExe + " -compile -defragrpo -env="+ $environment )
     Invoke-Expression $AppplyCommand
 
     MostraStatus "Fim da Desfragmentação"
@@ -99,7 +101,7 @@ function limpaArquivosPreCompilacao {
 
     MostraStatus "Limpando arquivos de compilação"
 
-    Get-ChildItem  -Path $PRGPATH -File -Recurse -Force `
+    Get-ChildItem  -Path $appserverPath -File -Recurse -Force `
     -Include *.ppo,*.errprw,*.errprx,*.errprg,*.erx_PRW,*.erx_PRX,*.erx_PRG,*.ppx_PRW,*.ppx_PRX,*.ppx_PRG `
     | Remove-Item -Force -ErrorAction SilentlyContinue
 
