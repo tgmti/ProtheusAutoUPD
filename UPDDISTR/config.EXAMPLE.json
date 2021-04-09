@@ -1,0 +1,12 @@
+{
+    "update_path": "C:\\TOTVS\\ATUALIZACOES\\UPDDISTR\\APLICAR\\",
+    "success_path": "C:\\TOTVS\\ATUALIZACOES\\UPDDISTR\\SUCESSO\\",
+    "error_path": "C:\\TOTVS\\ATUALIZACOES\\UPDDISTR\\ERRO\\",
+    "log_path": "C:\\TOTVS\\ATUALIZACOES\\UPDDISTR\\LOGS\\",
+    "log_file": "C:\\TOTVS\\ATUALIZACOES\\UPDDISTR\\LOGS\\UpdDistrCompleto.log",
+    "system_path": "",
+    "systemload_path": "",
+    "appserver_path": "C:\\TOTVS\\APPSERVER\\",
+    "appserver_exe": "appserver.exe",
+    "environment": "environment"
+}
