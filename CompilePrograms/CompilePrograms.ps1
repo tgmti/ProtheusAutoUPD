@@ -43,7 +43,7 @@ function ListarArquivos {
 
     MostraStatus "Obtendo Lista dos programas a compilar..."
 
-    Get-ChildItem  -Path $appserverPath -File -Recurse -Force -Include *.PRW,*.PRG,*.PRX `
+    Get-ChildItem  -Path $appserverPath -File -Recurse -Force -Include *.PRW,*.PRG,*.PRX,*.TLPP,*.APP `
     | Where-Object { $_.FullName -notlike "*\.git\*" `
     -and $_.FullName -notlike "*\.Includes\*" `
     -and $_.FullName -notlike "*\.vscode\*" `
