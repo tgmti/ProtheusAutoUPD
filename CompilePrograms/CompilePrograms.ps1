@@ -1,15 +1,14 @@
-$oConfig = Get-Content 'config.json' | ConvertFrom-Json
+$oConfig = Get-Content '.\config.json' | ConvertFrom-Json
 
-$appserverPath=$oConfig.appserver_path
+$projectPath=$oConfig.project_path
 $compileListFile=$oConfig.compile_list_file
 $outputPath=$oConfig.output_path
-$projectPath=$oConfig.proth
-$appserverExe=$projectPath + '\' + $oconfig.appserver_exe
+$appserverPath=$oConfig.appserver_path
+$appserverExe=$appserverPath + $oconfig.appserver_exe
 $environment=$oConfig.environment
 $includesPath=$oConfig.includes_path
 
-$SEPARATOR="".PadRight(80,"=")
-$PRG_COMPILAR=$null
+$separator="".PadRight(80,"=")
 
 function ExecutarCompilacao() {
 
@@ -24,9 +23,9 @@ function ExecutarCompilacao() {
 }
 
 function MostraStatus($texto) {
-    Write-Host $SEPARATOR
+    Write-Host $separator
     Write-Host  $texto
-    Write-Host $SEPARATOR
+    Write-Host $separator
 }
 
 function LimparArquivosAntigos {
@@ -41,19 +40,21 @@ function LimparArquivosAntigos {
 
 function ListarArquivos {
 
+    $compileList=$null
+
     MostraStatus "Obtendo Lista dos programas a compilar..."
 
-    Get-ChildItem  -Path $appserverPath -File -Recurse -Force -Include *.PRW,*.PRG,*.PRX,*.TLPP,*.APP `
+    Get-ChildItem  -Path $projectPath -File -Recurse -Force -Include *.PRW,*.PRG,*.PRX,*.TLPP,*.APP `
     | Where-Object { $_.FullName -notlike "*\.git\*" `
     -and $_.FullName -notlike "*\.Includes\*" `
     -and $_.FullName -notlike "*\.vscode\*" `
     } `
-    | Format-Table -HideTableHeaders -Property @{e={$_.FullName + ";"}; width = 255} -AutoSize -OutVariable PRG_COMPILAR
+    | Format-Table -HideTableHeaders -Property @{e={$_.FullName + ";"}; width = 255} -AutoSize -OutVariable compileList
 
-    if ($PRG_COMPILAR.Count -gt 0) {
-        MostraStatus "Encontrados $($PRG_COMPILAR.Count -4) programas para compilar. Gerando arquivo $compileListFile ..."
+    if ($compileList.Count -gt 0) {
+        MostraStatus "Encontrados $($compileList.Count -4) programas para compilar. Gerando arquivo $compileListFile ..."
 
-        $PRG_COMPILAR | Out-File -Path $compileListFile -NoNewline -Encoding "Windows-1252" -Width 255
+        $compileList | Out-File -Path $compileListFile -NoNewline -Encoding "Windows-1252" -Width 255
 
         If (Get-Item $compileListFile) { return $True } else { return $False}
 
@@ -71,14 +72,14 @@ function compilarProgramas {
     $AppplyCommand = ('& ' + $appserverExe + ' -compile ' `
     + ' -files="'+$compileListFile +'"' `
     + ' -includes="'+ $includesPath +'"' `
-    + ' -src="'+ $projectPath +'"' `
+    + ' -src="'+ $appserverPath +'"' `
     + ' -env='+ $environment `
     + ' -outreport="'+ $outputPath +'"' `
     )
 
     Write-Host Comando:
     Write-Host $AppplyCommand
-    Write-Host $SEPARATOR
+    Write-Host $separator
 
     Invoke-Expression $AppplyCommand
 
@@ -101,7 +102,7 @@ function limpaArquivosPreCompilacao {
 
     MostraStatus "Limpando arquivos de compilação"
 
-    Get-ChildItem  -Path $appserverPath -File -Recurse -Force `
+    Get-ChildItem  -Path $projectPath -File -Recurse -Force `
     -Include *.ppo,*.errprw,*.errprx,*.errprg,*.erx_PRW,*.erx_PRX,*.erx_PRG,*.ppx_PRW,*.ppx_PRX,*.ppx_PRG `
     | Remove-Item -Force -ErrorAction SilentlyContinue
 

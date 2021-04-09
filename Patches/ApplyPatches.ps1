@@ -1,4 +1,4 @@
-$oConfig = Get-Content 'config.json' | ConvertFrom-Json
+$oConfig = Get-Content '.\config.json' | ConvertFrom-Json
 
 $updatePath = $oConfig.update_path
 $successPath = $oConfig.success_path
