@@ -84,13 +84,13 @@ function UpdateProtheus {
     if ($WithSuccess.Length -gt 0) {
         Write-Host $separator
         Write-Host Com sucesso:
-        $WithSuccess | Select Name | Format-Table -AutoSize -Wrap
+        $WithSuccess | Select-Object Name | Format-Table -AutoSize -Wrap
     }
 
     if ($WithErrors.Length -gt 0) {
         Write-Host $separator
         Write-Host Com Erros:
-        $WithErrors | Select Name | Format-Table -AutoSize -Wrap
+        $WithErrors | Select-Object Name | Format-Table -AutoSize -Wrap
     }
 
     Write-Host $separator
